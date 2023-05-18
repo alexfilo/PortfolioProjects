@@ -1,0 +1,293 @@
+---
+title: "Project 2 Yelp"
+authors: "Alex Filo, Almann Brague"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#Loading in and cleaning up the data
+yelp <- read.csv(file = "Yelp_train.csv", header=TRUE, sep=",", na.strings = c("", "NA"))
+yelp <- yelp[,-1]
+yelp$text <- as.character(yelp$text)
+yelp$categories <- as.character(yelp$categories)
+yelp$date <- as.Date(yelp$date)
+```
+
+
+```{r}
+#Cleaning up other data
+yelp_test <- read.csv("Yelp_test.csv")
+yelp_validate <- read.csv("Yelp_validate.csv")
+yelp_out <- rbind(yelp_test,yelp_validate)
+yelp_out$text <- as.character(yelp_out$text)
+yelp_out$categories <- as.character(yelp_out$categories)
+yelp_out$name <- as.character(yelp_out$name) 
+yelp_out$city <- as.character(yelp_out$city)
+yelp_out$city <- factor(yelp_out$city)
+yelp_out$date <- as.Date(yelp_out$date)
+```
+
+```{r}
+library(splitstackshape)
+yelp$categories <- as.character(yelp$categories)
+yelp2 <- cSplit(yelp, 'categories', sep = ",")
+uniquecats <- unique(yelp2$categories_01)
+```
+
+```{r}
+### creating categories in yelp
+catcheck <- function(category) {
+yelp$categories <- as.character(yelp$categories)
+onecount = 0
+twocount = 0
+threecount = 0
+fourcount = 0
+fivecount = 0
+total = 0
+
+for(x in 1 : length(yelp$categories)) {
+  if(grepl(category, yelp$categories[x])) {
+    if(yelp$stars[x] == 1) {
+      onecount = onecount + 1
+    }
+    if(yelp$stars[x] == 2) {
+      twocount = twocount + 1
+    }
+    if(yelp$stars[x] == 3) {
+      threecount = threecount + 1
+    }
+    if(yelp$stars[x] == 4) {
+      fourcount = fourcount + 1
+    }
+    if(yelp$stars[x] == 5) {
+      fivecount = fivecount + 1
+    }
+    total = total + 1
+  }
+  
+}
+
+return(fivecount/total)
+}
+
+
+uniquecat <- unique(yelp2$categories_01)
+fivecountlist <- lapply(uniquecat, catcheck)
+
+# Create variables
+yelp_length <- length(yelp$categories)
+yelp$Russian <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Russian", yelp$categories[x])) {
+    yelp$Russian[x] <- 1
+  }
+}
+yelp$Boat <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Boat", yelp$categories[x])) {
+    yelp$Boat[x] <- 1
+  }
+}
+yelp$FoodStands <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Food Stands", yelp$categories[x])) {
+    yelp$FoodStands[x] <- 1
+  }
+}
+yelp$FoodTrucks <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Food Trucks", yelp$categories[x])) {
+    yelp$FoodTrucks[x] <- 1
+  }
+}
+yelp$ConvenienceStores <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Convenience Stores", yelp$categories[x])) {
+    yelp$ConvenienceStores[x] <- 1
+  }
+}
+yelp$TeaRooms <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Tea Rooms", yelp$categories[x])) {
+    yelp$TeaRooms[x] <- 1
+  }
+}
+yelp$ArtGalleries <- 0
+for(x in 1: yelp_length) {
+  if(grepl("Art Galleries", yelp$categories[x])) {
+    yelp$ArtGalleries[x] <- 1
+  }
+}
+```
+
+```{r}
+# Create yelp_out variables
+yelpout_length <- length(yelp_out$categories)
+yelp_out$Russian <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Russian", yelp_out$categories[x])) {
+    yelp_out$Russian[x] <- 1
+  }
+}
+yelp_out$Boat <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Boat", yelp_out$categories[x])) {
+    yelp_out$Boat[x] <- 1
+  }
+}
+yelp_out$FoodStands <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Food Stands", yelp_out$categories[x])) {
+    yelp_out$FoodStands[x] <- 1
+  }
+}
+yelp_out$FoodTrucks <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Food Trucks", yelp_out$categories[x])) {
+    yelp_out$FoodTrucks[x] <- 1
+  }
+}
+yelp_out$ConvenienceStores <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Convenience Stores", yelp_out$categories[x])) {
+    yelp_out$ConvenienceStores[x] <- 1
+  }
+}
+yelp_out$TeaRooms <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Tea Rooms", yelp_out$categories[x])) {
+    yelp_out$TeaRooms[x] <- 1
+  }
+}
+yelp_out$ArtGalleries <- 0
+for(x in 1: yelpout_length) {
+  if(grepl("Art Galleries", yelp_out$categories[x])) {
+    yelp_out$ArtGalleries[x] <- 1
+  }
+}
+```
+
+```{r}
+# additional sentiment variables
+yelp$sentimentFood = yelp$perfection + yelp$deliciously + yelp$delectable + yelp$sourced + yelp$deliciousness + yelp$scrumptious + yelp$watering + yelp$yum + yelp$delicious + yelp$delish - yelp$undercooked - yelp$burned - yelp$stale - yelp$rubbery - yelp$lukewarm - yelp$flavorless - yelp$tasteless - yelp$inedible
+
+yelp$sentimentStaff = yelp$knowledgeable + yelp$knowledgable - yelp$management - yelp$messed - yelp$manager - yelp$inattentive - yelp$apologize - yelp$charged - yelp$ignored - yelp$rude - yelp$refused - yelp$apology
+
+yelp$sentimentLocation = yelp$adorable + yelp$hidden + yelp$relaxed + yelp$secret + yelp$terrace
+
+yelp_out$sentimentFood = yelp_out$perfection + yelp_out$deliciously + yelp_out$delectable + yelp_out$sourced + yelp_out$deliciousness + yelp_out$scrumptious + yelp_out$watering + yelp_out$yum + yelp_out$delicious + yelp_out$delish - yelp_out$undercooked - yelp_out$burned - yelp_out$stale - yelp_out$rubbery - yelp_out$lukewarm - yelp_out$flavorless - yelp_out$tasteless - yelp_out$inedible
+
+yelp_out$sentimentStaff = yelp_out$knowledgeable + yelp_out$knowledgable - yelp_out$management - yelp_out$messed - yelp_out$manager - yelp_out$inattentive - yelp_out$apologize - yelp_out$charged - yelp_out$ignored - yelp_out$rude - yelp_out$refused - yelp_out$apology
+
+yelp_out$sentimentLocation = yelp_out$adorable + yelp_out$hidden + yelp_out$relaxed + yelp_out$secret + yelp_out$terrace
+
+```
+
+```{r}
+tweets_text <- yelp$text
+library(tm)
+tweets_source <- VectorSource(tweets_text)
+tweets_corpus <- VCorpus(tweets_source)
+clean_corpus <- function(corpus){
+  corpus <- tm_map(corpus, stripWhitespace)
+  corpus <- tm_map(corpus, removePunctuation)
+  corpus <- tm_map(corpus, content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, stopwords("en"))
+    return(corpus)
+}
+# Apply your customized function to the tweet_corp: clean_corp
+clean_corp <- clean_corpus(tweets_corpus)
+
+tweets_tdm <- TermDocumentMatrix(clean_corp)
+tweets_tdm_rm_sparse <- removeSparseTerms(tweets_tdm, 0.99)
+tweets_m <- as.matrix(tweets_tdm_rm_sparse)
+dim(tweets_m)
+df <- data.frame(t(tweets_m))
+names <- colnames(df)
+```
+
+```{r}
+tweets_text_out <- yelp_out$text
+tweets_source_out <- VectorSource(tweets_text_out)
+tweets_corpus_out <- VCorpus(tweets_source_out)
+
+clean_corp_out <- clean_corpus(tweets_corpus_out)
+tweets_tdm_out <- TermDocumentMatrix(clean_corp_out)
+tweets_tdm_rm_sparse_out <- removeSparseTerms(tweets_tdm_out, .9999)
+tweets_m_out <- as.matrix(tweets_tdm_rm_sparse_out)
+dim(tweets_m_out)
+df_2 <- data.frame(t(tweets_m_out))
+library(tidyverse)
+df_2 <- df_2 %>% select(one_of(names))
+
+refinedYelp <- data.frame(yelp$stars, yelp$useful, yelp$funny, yelp$cool, log(yelp$nchar), log(yelp$nword), yelp$sentiment, yelp$sentimentFood, yelp$sentimentStaff, yelp$sentimentLocation, yelp$Russian, yelp$Boat, yelp$FoodTrucks, yelp$FoodStands, yelp$ConvenienceStores, yelp$ArtGalleries, yelp$TeaRooms)
+refinedYelp_out <- data.frame(yelp_out$Id, yelp_out$useful, yelp_out$funny, yelp_out$cool, log(yelp_out$nchar), log(yelp_out$nword), yelp_out$sentiment, yelp_out$sentimentFood, yelp_out$sentimentStaff, yelp_out$sentimentLocation, yelp_out$Russian, yelp_out$Boat, yelp_out$FoodTrucks, yelp_out$FoodStands, yelp_out$ConvenienceStores, yelp_out$ArtGalleries, yelp_out$TeaRooms)
+```
+
+```{r}
+yelpXtra <- bind_cols(refinedYelp, df)
+yelpXtra <- yelpXtra %>%
+  rename(num.stars = yelp.stars) %>%
+  rename(review.useful = yelp.useful) %>%
+  rename(review.funny = yelp.funny) %>%
+  rename(review.cool = yelp.cool) %>%
+  rename(log.nchar = log.yelp.nchar.) %>%
+  rename(log.nword = log.yelp.nword.) %>%
+  rename(sentiment = yelp.sentiment) %>%
+  rename(sentimentFood = yelp.sentimentFood) %>%
+  rename(sentimentStaff = yelp.sentimentStaff) %>%
+  rename(sentimentLocation = yelp.sentimentLocation) %>%
+  rename(Russian = yelp.Russian) %>%
+  rename(Boat = yelp.Boat) %>%
+  rename(FoodTrucks = yelp.FoodTrucks) %>%
+  rename(FoodStands = yelp.FoodStands) %>%
+  rename(ConvenienceStores = yelp.ConvenienceStores) %>%
+  rename(ArtGalleries = yelp.ArtGalleries) %>%
+  rename(TeaRooms = yelp.TeaRooms)
+
+yelp_out <- bind_cols(refinedYelp_out, df_2) 
+yelp_out <- yelp_out %>%
+rename(Id = yelp_out.Id) %>%
+  rename(review.useful = yelp_out.useful) %>%
+  rename(review.funny = yelp_out.funny) %>%
+  rename(review.cool = yelp_out.cool) %>%
+  rename(log.nchar = log.yelp_out.nchar.) %>%
+  rename(log.nword = log.yelp_out.nword.) %>%
+  rename(sentiment = yelp_out.sentiment) %>%
+  rename(sentimentFood = yelp_out.sentimentFood) %>%
+  rename(sentimentStaff = yelp_out.sentimentStaff) %>%
+  rename(sentimentLocation = yelp_out.sentimentLocation) %>%
+  rename(Russian = yelp_out.Russian) %>%
+  rename(Boat = yelp_out.Boat) %>%
+  rename(FoodTrucks = yelp_out.FoodTrucks) %>%
+  rename(FoodStands = yelp_out.FoodStands) %>%
+  rename(ConvenienceStores = yelp_out.ConvenienceStores) %>%
+  rename(ArtGalleries = yelp_out.ArtGalleries) %>%
+  rename(TeaRooms = yelp_out.TeaRooms)
+```
+
+```{r}
+model5 <- lm(num.stars~., yelpXtra)
+summary(model5)
+```
+
+
+```{r}
+star_out <- data.frame(Id=yelp_out$Id, Expected=predict(model5, newdata = yelp_out))
+write.csv(star_out, file='group7.csv', row.names=FALSE)
+```
+
+
+
+```{r}
+lm5_resid <- resid(model5)
+plot(yelp$stars, lm5_resid, ylab = "Residuals", xlab = "Stars", main = "Residual Plot for Stars")
+abline(0,0)
+```
+
